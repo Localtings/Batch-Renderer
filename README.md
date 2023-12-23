@@ -1,3 +1,3 @@
 # Batch Renderer
 
-A 2d opengl batch renderer written in c that im working on
+My attempt to make a 2d opengl batch renderer without any tutorials :]
