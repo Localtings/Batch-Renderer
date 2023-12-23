@@ -207,11 +207,11 @@
     <ClInclude Include="Source\renderer\shader.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Data\Textures\cillian_murphy.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Library Include="Library\cglm.lib" />
     <Library Include="Library\glfw3.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Data\Textures\cillian_murphy.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

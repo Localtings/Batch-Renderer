@@ -571,12 +571,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <Library Include="Library\glfw3.lib" />
+    <Library Include="Library\cglm.lib" />
+  </ItemGroup>
+  <ItemGroup>
     <Image Include="Data\Textures\cillian_murphy.png">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="Library\glfw3.lib" />
-    <Library Include="Library\cglm.lib" />
   </ItemGroup>
 </Project>
