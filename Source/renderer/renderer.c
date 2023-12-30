@@ -1,5 +1,5 @@
 #include "renderer.h"
-#include <glad/glad.h>
+#include "../utils/bool.h"
 #include <memory.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -22,7 +22,7 @@ int renderer_init_vao(renderer_t *R_p)
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-	return 1;
+	return TRUE;
 }
 
 int renderer_init_coords(renderer_t *R_p)
@@ -32,7 +32,7 @@ int renderer_init_coords(renderer_t *R_p)
 	glm_mat4_identity(R_p->coords_d.proj);
 	glm_translate(R_p->coords_d.view, (vec3) { 0.f, 0.f, -10.f });
 	glm_perspective(45.f, 800.f / 600.f, 0.1f, 100.f, R_p->coords_d.proj);
-	return 1;
+	return TRUE;
 }
 
 int renderer_init_vertices(renderer_t *R_p)
@@ -42,7 +42,7 @@ int renderer_init_vertices(renderer_t *R_p)
 	R_p->vert_d.vert = malloc(R_p->vert_d.vert_size);
 	memset(R_p->vert_d.vert, 0, R_p->vert_d.vert_size);
 	R_p->vert_d.quad_count = 0;
-	return 1;
+	return TRUE;
 }
 
 int renderer_init_textures(renderer_t *R_p)
@@ -53,26 +53,26 @@ int renderer_init_textures(renderer_t *R_p)
 	memset(R_p->texs, 0, tex_size);
 	R_p->tex_count = 0;
 	stbi_set_flip_vertically_on_load(1);
-	return 1;
+	return TRUE;
 }
 
 
 int renderer_init(renderer_t *R_p)
 {
 	if (!init_shader(&(R_p->shader_id)))
-		return 0;
+		return false;
 	renderer_init_vertices(R_p);
 	renderer_init_vao(R_p);
 	renderer_init_coords(R_p);
 	renderer_init_textures(R_p);
-	return 1;
+	return TRUE;
 }
 
 int renderer_draw_call(renderer_t *R_p)
 {
 	glBindVertexArray(R_p->vao);
 	glDrawArrays(GL_TRIANGLES, 0, QUAD_VERT * R_p->vert_d.quad_count);
-	return 1;
+	return TRUE;
 }
 
 int renderer_set_samplers(renderer_t *R_p)
@@ -85,7 +85,7 @@ int renderer_set_samplers(renderer_t *R_p)
 		samplers[i] = i;
 	texs_loc = glGetUniformLocation(R_p->shader_id, "texs");
 	glUniform1iv(texs_loc, 32, samplers);
-	return 1;
+	return TRUE;
 }
 
 int renderer_submit_mvp(renderer_t *R_p)
@@ -93,7 +93,7 @@ int renderer_submit_mvp(renderer_t *R_p)
 	set_uniform_mat4(R_p->shader_id, "model", R_p->coords_d.model);
 	set_uniform_mat4(R_p->shader_id, "view", R_p->coords_d.view);
 	set_uniform_mat4(R_p->shader_id, "proj", R_p->coords_d.proj);
-	return 1;
+	return TRUE;
 }
 
 int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
@@ -101,10 +101,10 @@ int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
 	int curr_vert;
 	curr_vert = QUAD_VERT * R_p->vert_d.quad_count;
 	if (curr_vert + QUAD_VERT > R_p->vert_d.max_vert)
-		return 0;
+		return false;
 	memcpy(R_p->vert_d.vert + curr_vert, quad, sizeof(vertex_t) * QUAD_VERT);
 	R_p->vert_d.quad_count++;
-	return 1;
+	return TRUE;
 }
 
 int renderer_submit_textures(renderer_t *R_p)
@@ -112,7 +112,7 @@ int renderer_submit_textures(renderer_t *R_p)
 	int i;
 	for (i = 0; i < R_p->tex_count; i++)
 		glBindTextureUnit(i, *(R_p->texs + i));
-	return 1;
+	return TRUE;
 }
 
 int renderer_flush(renderer_t *R_p)
@@ -121,17 +121,15 @@ int renderer_flush(renderer_t *R_p)
 	memset(R_p->vert_d.vert, 0, R_p->vert_d.vert_size);
 	memset(R_p->texs, 0, MAX_TEX * sizeof(unsigned int));
 	R_p->tex_count = 0;
-	return 1;
+	return TRUE;
 }
 
-int renderer_draw_quad(renderer_t *R_p, float x, float y, unsigned int tex_id)
+int renderer_draw_quad(renderer_t *R_p, vec2_t pos, float size, unsigned int tex_id)
 {
 	vertex_t res[QUAD_VERT];
-	float size;
 	float tex_index;
 	int tex_find;
 	int i;
-	size = 1.f;
 	tex_find = 0;
 
 	for (i = 0; i < R_p->tex_count; i++)
@@ -153,27 +151,27 @@ int renderer_draw_quad(renderer_t *R_p, float x, float y, unsigned int tex_id)
 		R_p->tex_count++;
 	}
 
-	res[0].pos = (vec3_t){ x, y, 0.f };
+	res[0].pos = (vec3_t){ pos.x, pos.y, 0.f };
 	res[0].tex_coord = (vec2_t){ 0.0f, 0.0f };
 	res[0].tex_index = tex_index;
 
-	res[1].pos = (vec3_t){ x + size, y, 0.f };
+	res[1].pos = (vec3_t){ pos.x + size, pos.y, 0.f };
 	res[1].tex_coord = (vec2_t){ 1.0f, 0.0f };
 	res[1].tex_index = tex_index;
 
-	res[2].pos = (vec3_t){ x + size, y + size, 0.f };
+	res[2].pos = (vec3_t){ pos.x + size, pos.y + size, 0.f };
 	res[2].tex_coord = (vec2_t){ 1.0f, 1.0f };
 	res[2].tex_index = tex_index;
 
-	res[3].pos = (vec3_t){ x + size, y + size, 0.f };
+	res[3].pos = (vec3_t){ pos.x + size, pos.y + size, 0.f };
 	res[3].tex_coord = (vec2_t){ 1.0f, 1.0f };
 	res[3].tex_index = tex_index;
 
-	res[4].pos = (vec3_t){ x, y + size, 0.f };
+	res[4].pos = (vec3_t){ pos.x, pos.y + size, 0.f };
 	res[4].tex_coord = (vec2_t){ 0.0f, 1.0f };
 	res[4].tex_index = tex_index;
 
-	res[5].pos = (vec3_t){ x, y, 0.f };
+	res[5].pos = (vec3_t){ pos.x, pos.y, 0.f };
 	res[5].tex_coord = (vec2_t){ 0.0f, 0.0f };
 	res[5].tex_index = tex_index;
 
@@ -184,7 +182,7 @@ int renderer_submit_vert(renderer_t *R_p)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, R_p->vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, R_p->vert_d.vert_size, R_p->vert_d.vert);
-	return 1;
+	return TRUE;
 }
 
 int renderer_load_tex(renderer_t *R_p, unsigned int *tex_p, const char *tex_dir)
@@ -202,14 +200,14 @@ int renderer_load_tex(renderer_t *R_p, unsigned int *tex_p, const char *tex_dir)
 	if (!data)
 	{
 		fprintf(stderr, "Failed to load texture");
-		return 0;
+		return false;
 	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	stbi_image_free(data);
 	memcpy(tex_p, &tex, sizeof(unsigned int));
-	return 1;
+	return TRUE;
 }
 
 int renderer_draw(renderer_t *R_p)
@@ -221,7 +219,7 @@ int renderer_draw(renderer_t *R_p)
 	renderer_submit_textures(R_p);
 	renderer_draw_call(R_p);
 	renderer_flush(R_p);
-	return 1;
+	return TRUE;
 }
 
 int renderer_end(renderer_t *R_p)
@@ -230,5 +228,5 @@ int renderer_end(renderer_t *R_p)
 	glDeleteVertexArrays(1, &(R_p->vao));
 	glDeleteBuffers(1, &(R_p->vbo));
 	destroy_shader(R_p->shader_id);
-	return 1;
+	return TRUE;
 }

@@ -205,6 +205,7 @@
     <ClInclude Include="Library\stb_image.h" />
     <ClInclude Include="Source\renderer\renderer.h" />
     <ClInclude Include="Source\renderer\shader.h" />
+    <ClInclude Include="Source\utils\bool.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Library\cglm.lib" />

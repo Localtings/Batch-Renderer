@@ -68,16 +68,16 @@ int main()
 		glClearColor(0, 1, 0, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		float j, k;
+		float x, y;
 		int i;
 
 		i = 0;
-		for (k = -3.5f; k <= 1.5f; k++)
+		for (y = -3.5f; y <= 1.5f; y++)
 		{
-			for (j = -3.f; j <= 2.f; j++)
+			for (x = -3.f; x <= 2.f; x++)
 			{
 
-				renderer_draw_quad(&R, j, k, cillian_murphy_goddess[i]);
+				renderer_draw_quad(&R, (vec2_t){ x, y }, 1.f, cillian_murphy_goddess[i]);
 				i++;
 			}
 		}

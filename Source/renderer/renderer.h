@@ -47,7 +47,7 @@ typedef struct
 } renderer_t;
 
 int renderer_init(renderer_t *);
-int renderer_draw_quad(renderer_t *, float, float, unsigned int);
+int renderer_draw_quad(renderer_t *, vec2_t, float, unsigned int);
 int renderer_load_tex(renderer_t *, unsigned int *, const char *);
 int renderer_draw(renderer_t *);
 int renderer_flush(renderer_t *);

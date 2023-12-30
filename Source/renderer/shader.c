@@ -1,7 +1,6 @@
 #include "shader.h"
+#include "../utils/bool.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <glad/glad.h>
 #include <memory.h>
 
 const char *vertshader_src =
@@ -42,13 +41,13 @@ const char *fragshader_src =
 int bind_shader(unsigned int id)
 {
   glUseProgram(id);
-  return 1;
+  return FALSE;
 }
 
 int destroy_shader(unsigned int id)
 {
   glDeleteProgram(id);
-  return 1;
+  return FALSE;
 }
 
 int init_shader(unsigned int *id)
