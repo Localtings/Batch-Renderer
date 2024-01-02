@@ -84,6 +84,7 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+	free(cowcowmanmanthingit);
 	renderer_end(&R);
 	cleanexit(0);
 }
