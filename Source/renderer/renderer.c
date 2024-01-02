@@ -14,24 +14,33 @@ int renderer_init_vao(renderer_t *R_p)
 	glBufferData(GL_ARRAY_BUFFER, R_p->vert_d.vert_size, NULL, GL_DYNAMIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), offsetof(vertex_t, pos));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), offsetof(vertex_t, ndc));
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(vertex_t), offsetof(vertex_t, tex_index));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(vertex_t), offsetof(vertex_t, model_index));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	return TRUE;
 }
 
-int renderer_init_coords(renderer_t *R_p)
+int renderer_init_mvp(renderer_t *R_p)
 {
-	glm_mat4_identity(R_p->coords_d.model);
-	glm_mat4_identity(R_p->coords_d.view);
-	glm_mat4_identity(R_p->coords_d.proj);
-	glm_translate(R_p->coords_d.view, (vec3) { 0.f, 0.f, -10.f });
-	glm_perspective(45.f, 800.f / 600.f, 0.1f, 100.f, R_p->coords_d.proj);
+	R_p->mvp_d.model_index = 0;
+	R_p->mvp_d.model_arr_size = sizeof(mat4) * MAX_MODEL;
+	R_p->mvp_d.model_arr = malloc(R_p->mvp_d.model_arr_size);
+	glGenBuffers(1, &(R_p->mvp_d.ssbo));
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, R_p->mvp_d.ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, R_p->mvp_d.model_arr_size, NULL, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, R_p->mvp_d.ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glm_mat4_identity(R_p->mvp_d.view);
+	glm_mat4_identity(R_p->mvp_d.proj);
+	glm_translate(R_p->mvp_d.view, (vec3) { 0.f, 0.f, -10.f });
+	glm_perspective(45.f, 800.f / 600.f, 0.1f, 100.f, R_p->mvp_d.proj);
 	return TRUE;
 }
 
@@ -60,10 +69,10 @@ int renderer_init_textures(renderer_t *R_p)
 int renderer_init(renderer_t *R_p)
 {
 	if (!init_shader(&(R_p->shader_id)))
-		return false;
+		return FALSE;
 	renderer_init_vertices(R_p);
 	renderer_init_vao(R_p);
-	renderer_init_coords(R_p);
+	renderer_init_mvp(R_p);
 	renderer_init_textures(R_p);
 	return TRUE;
 }
@@ -90,9 +99,19 @@ int renderer_set_samplers(renderer_t *R_p)
 
 int renderer_submit_mvp(renderer_t *R_p)
 {
-	set_uniform_mat4(R_p->shader_id, "model", R_p->coords_d.model);
-	set_uniform_mat4(R_p->shader_id, "view", R_p->coords_d.view);
-	set_uniform_mat4(R_p->shader_id, "proj", R_p->coords_d.proj);
+	set_uniform_mat4(R_p->shader_id, "view", R_p->mvp_d.view);
+	set_uniform_mat4(R_p->shader_id, "proj", R_p->mvp_d.proj);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, R_p->mvp_d.ssbo);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, R_p->mvp_d.model_arr_size, R_p->mvp_d.model_arr);
+	return TRUE;
+}
+
+int renderer_push_model(renderer_t *R_p, mat4 model)
+{
+	if (R_p->mvp_d.model_index + 1 > MAX_MODEL)
+		return FALSE;
+	memcpy(R_p->mvp_d.model_arr + R_p->mvp_d.model_index, model, sizeof(mat4));
+	R_p->mvp_d.model_index++;
 	return TRUE;
 }
 
@@ -101,7 +120,7 @@ int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
 	int curr_vert;
 	curr_vert = QUAD_VERT * R_p->vert_d.quad_count;
 	if (curr_vert + QUAD_VERT > R_p->vert_d.max_vert)
-		return false;
+		return FALSE;
 	memcpy(R_p->vert_d.vert + curr_vert, quad, sizeof(vertex_t) * QUAD_VERT);
 	R_p->vert_d.quad_count++;
 	return TRUE;
@@ -124,7 +143,7 @@ int renderer_flush(renderer_t *R_p)
 	return TRUE;
 }
 
-int renderer_draw_quad(renderer_t *R_p, vec2_t pos, float size, unsigned int tex_id)
+int renderer_draw_quad(renderer_t *R_p, unsigned int tex_id, unsigned int model_index)
 {
 	vertex_t res[QUAD_VERT];
 	float tex_index;
@@ -151,29 +170,35 @@ int renderer_draw_quad(renderer_t *R_p, vec2_t pos, float size, unsigned int tex
 		R_p->tex_count++;
 	}
 
-	res[0].pos = (vec3_t){ pos.x, pos.y, 0.f };
+	res[0].ndc = (vec3_t){ 0.f, 0.f, 0.f };
 	res[0].tex_coord = (vec2_t){ 0.0f, 0.0f };
 	res[0].tex_index = tex_index;
+	res[0].model_index = model_index;
 
-	res[1].pos = (vec3_t){ pos.x + size, pos.y, 0.f };
+	res[1].ndc = (vec3_t){ 1.f, 0.f, 0.f };
 	res[1].tex_coord = (vec2_t){ 1.0f, 0.0f };
 	res[1].tex_index = tex_index;
+	res[1].model_index = model_index;
 
-	res[2].pos = (vec3_t){ pos.x + size, pos.y + size, 0.f };
+	res[2].ndc = (vec3_t){ 1.f, 1.f, 0.f };
 	res[2].tex_coord = (vec2_t){ 1.0f, 1.0f };
 	res[2].tex_index = tex_index;
+	res[2].model_index = model_index;
 
-	res[3].pos = (vec3_t){ pos.x + size, pos.y + size, 0.f };
+	res[3].ndc = (vec3_t){ 1.f, 1.f, 0.f };
 	res[3].tex_coord = (vec2_t){ 1.0f, 1.0f };
 	res[3].tex_index = tex_index;
+	res[3].model_index = model_index;
 
-	res[4].pos = (vec3_t){ pos.x, pos.y + size, 0.f };
+	res[4].ndc = (vec3_t){ 0.f, 1.f, 0.f };
 	res[4].tex_coord = (vec2_t){ 0.0f, 1.0f };
 	res[4].tex_index = tex_index;
+	res[4].model_index = model_index;
 
-	res[5].pos = (vec3_t){ pos.x, pos.y, 0.f };
+	res[5].ndc = (vec3_t){ 0.f, 0.f, 0.f };
 	res[5].tex_coord = (vec2_t){ 0.0f, 0.0f };
 	res[5].tex_index = tex_index;
+	res[5].model_index = model_index;
 
 	return renderer_push_quad2vert(R_p, res);
 }
@@ -200,7 +225,7 @@ int renderer_load_tex(renderer_t *R_p, unsigned int *tex_p, const char *tex_dir)
 	if (!data)
 	{
 		fprintf(stderr, "Failed to load texture");
-		return false;
+		return FALSE;
 	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -225,6 +250,7 @@ int renderer_draw(renderer_t *R_p)
 int renderer_end(renderer_t *R_p)
 {
 	free(R_p->vert_d.vert);
+	free(R_p->mvp_d.model_arr);
 	glDeleteVertexArrays(1, &(R_p->vao));
 	glDeleteBuffers(1, &(R_p->vbo));
 	destroy_shader(R_p->shader_id);

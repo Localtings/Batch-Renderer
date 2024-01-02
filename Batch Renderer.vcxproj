@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Include\glad\glad.c" />
     <ClCompile Include="Source\main.c" />
+    <ClCompile Include="Source\obj.c" />
     <ClCompile Include="Source\renderer\renderer.c" />
     <ClCompile Include="Source\renderer\shader.c" />
   </ItemGroup>
@@ -203,6 +204,7 @@
     <ClInclude Include="Include\KHR\khrplatform.h" />
     <ClInclude Include="Include\stb_image.h" />
     <ClInclude Include="Library\stb_image.h" />
+    <ClInclude Include="Source\obj.h" />
     <ClInclude Include="Source\renderer\renderer.h" />
     <ClInclude Include="Source\renderer\shader.h" />
     <ClInclude Include="Source\utils\bool.h" />

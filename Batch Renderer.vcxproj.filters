@@ -27,6 +27,9 @@
     <ClCompile Include="Source\renderer\renderer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\obj.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\glad\glad.h">
@@ -570,6 +573,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\utils\bool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\obj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,11 +4,15 @@
 #include <memory.h>
 
 const char *vertshader_src =
-"#version 330 core\n"
+"#version 430 core\n"
 "layout (location = 0) in vec3 vpos;\n"
 "layout (location = 1) in vec2 vtexcoord;\n"
 "layout (location = 2) in float vtexid;\n"
-
+"layout (location = 3) in float model_index;\n"
+"layout (std430, binding = 0) buffer models_mat\n"
+"{\n"
+"    mat4 models[];\n"
+"};\n"
 "uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 proj;\n"
@@ -18,13 +22,14 @@ const char *vertshader_src =
 
 "void main()\n"
 "{\n"
-"   gl_Position = proj * view * model * vec4(vpos, 1.0);\n"
+"   int index = int(model_index);\n"
+"   gl_Position = proj * view * models[index] * vec4(vpos, 1.0);\n"
 "   ftexcoord = vtexcoord;\n"
 "   ftexid = vtexid;\n"
 "}\0";
 
 const char *fragshader_src =
-"#version 330 core\n"
+"#version 430 core\n"
 "in vec2 ftexcoord;\n"
 "in float ftexid;"
 
@@ -58,12 +63,8 @@ int init_shader(unsigned int *id)
   res = 1;
   vertshader = glCreateShader(GL_VERTEX_SHADER);
   fragshader = glCreateShader(GL_FRAGMENT_SHADER);
-  if (!create_shader(vertshader, &vertshader_src) ||
-    !create_shader(fragshader, &fragshader_src))
-  {
-    fprintf(stderr, "create shader error\n");
-    return !res;
-  }
+  create_shader(vertshader, &vertshader_src);
+  create_shader(fragshader, &fragshader_src);
 
   *id = glCreateProgram();
   glAttachShader(*id, vertshader);
