@@ -73,13 +73,32 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-			glfwSetWindowShouldClose(window, 1);
+		mat4 thing;
+		float speed;
+		float m_x, m_y;
+		speed = 0.01f;
+		m_x = 0;
+		m_y = 0;
+
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			m_x = -speed;
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			m_x = speed;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			m_y = speed;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			m_y = -speed;
+
 		glClearColor(0, 1, 0, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		for (int i = 0; i < 25; i++)
 			obj_draw(&(cowcowmanmanthingit[i]), &R);
+
+		obj_get_model(&(cowcowmanmanthingit[0]), &R, &thing);
+		glm_translate(thing, (vec3) { m_x, m_y, 0.f });
+		obj_set_model(&(cowcowmanmanthingit[0]), &R, thing);
+
 		renderer_draw(&R);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
