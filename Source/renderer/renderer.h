@@ -3,7 +3,7 @@
 
 #define QUAD_VERT 6
 #define MAX_TEX 32
-#define MAX_MODEL 200
+#define MAX_MODEL 262144 /* random ass number */
 
 #include "shader.h"
 
