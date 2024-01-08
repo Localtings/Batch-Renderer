@@ -16,6 +16,9 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+const int screen_width = 800;
+const int screen_height = 800;
+
 int main()
 {
 	GLFWwindow *window;
@@ -27,7 +30,7 @@ int main()
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-	window = glfwCreateWindow(800, 800, "Batch Renderer", NULL, NULL);
+	window = glfwCreateWindow(screen_width, screen_height, "Batch Renderer", NULL, NULL);
 	if (window == NULL)
 	{
 		printf("Failed to create GLFW window");
@@ -44,7 +47,7 @@ int main()
 
 	renderer_t R;
 
-	if (!renderer_init(&R))
+	if (!renderer_init(&R, screen_width, screen_height))
 	{
 		fprintf(stderr, "Could not initialize renderer\n");
 		cleanexit(-1);
@@ -57,16 +60,19 @@ int main()
 
 	obj_t *cowcowmanmanthingit;
 	int i;
-	int size;
+	float row, col;
+	float quad_size;
 
-	cowcowmanmanthingit = malloc(sizeof(obj_t) * 25);
 	i = 0;
-	size = 1.f;
-	for (float j = -2.f * size; j <= 2.f * size; j += size)
+	quad_size = 100.f;
+	row = (screen_width / quad_size);
+	col = (screen_height / quad_size);
+	cowcowmanmanthingit = malloc(sizeof(obj_t) * (row * col));
+	for (float j = 0; j < row; j++)
 	{
-		for (float k = -2.f * size; k <= 2.f * size; k += size)
+		for (float k = 0; k < col; k++)
 		{
-			obj_create(&(cowcowmanmanthingit[i]), &R, (vec2_t) { j, k }, (vec2_t) { size, size }, cillian_murphy_goddess);
+			obj_create(&(cowcowmanmanthingit[i]), &R, (vec2_t) { j * quad_size, k * quad_size}, (vec2_t) { quad_size, quad_size }, cillian_murphy_goddess);
 			i++;
 		}
 	}
@@ -85,14 +91,14 @@ int main()
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			m_x = speed;
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			m_y = speed;
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 			m_y = -speed;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			m_y = speed;
 
 		glClearColor(0, 1, 0, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		for (int i = 0; i < 25; i++)
+		for (int i = 0; i < row * col; i++)
 			obj_draw(&(cowcowmanmanthingit[i]), &R);
 
 		obj_get_model(&(cowcowmanmanthingit[0]), &R, &thing);

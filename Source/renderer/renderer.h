@@ -3,7 +3,7 @@
 
 #define QUAD_VERT 6
 #define MAX_TEX 32
-#define MAX_MODEL 262144 /* random ass number */
+#define MAX_MODEL 262144
 
 #include "shader.h"
 
@@ -44,6 +44,7 @@ typedef struct
 
 typedef struct
 {
+	int width, height;
 	unsigned int shader_id;
 	unsigned int vao, vbo;
 	vert_data vert_d;
@@ -52,7 +53,7 @@ typedef struct
 	int tex_count;
 } renderer_t;
 
-int renderer_init(renderer_t *);
+int renderer_init(renderer_t *, int, int);
 int renderer_draw_quad(renderer_t *, unsigned int, unsigned int);
 int renderer_load_tex(renderer_t *, unsigned int *, const char *);
 int renderer_push_model(renderer_t *, mat4);

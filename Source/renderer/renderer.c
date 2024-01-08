@@ -4,7 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-int renderer_init_vao(renderer_t *R_p)
+static int renderer_init_vao(renderer_t *R_p)
 {
 	glGenVertexArrays(1, &(R_p->vao));
 	glGenBuffers(1, &(R_p->vbo));
@@ -27,7 +27,7 @@ int renderer_init_vao(renderer_t *R_p)
 	return TRUE;
 }
 
-int renderer_init_mvp(renderer_t *R_p)
+static int renderer_init_mvp(renderer_t *R_p)
 {
 	R_p->mvp_d.model_index = 0;
 	R_p->mvp_d.model_arr_size = sizeof(mat4) * MAX_MODEL;
@@ -39,12 +39,11 @@ int renderer_init_mvp(renderer_t *R_p)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glm_mat4_identity(R_p->mvp_d.view);
 	glm_mat4_identity(R_p->mvp_d.proj);
-	glm_translate(R_p->mvp_d.view, (vec3) { 0.f, 0.f, -10.f });
-	glm_perspective(45.f, 800.f / 600.f, 0.1f, 100.f, R_p->mvp_d.proj);
+	glm_ortho(0.f, R_p->width, R_p->height, 0.f, -1.f, 1.f, R_p->mvp_d.proj);
 	return TRUE;
 }
 
-int renderer_init_vertices(renderer_t *R_p)
+static int renderer_init_vertices(renderer_t *R_p)
 {
 	glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &(R_p->vert_d.max_vert));
 	R_p->vert_d.vert_size = sizeof(vertex_t) * R_p->vert_d.max_vert;
@@ -54,20 +53,21 @@ int renderer_init_vertices(renderer_t *R_p)
 	return TRUE;
 }
 
-int renderer_init_textures(renderer_t *R_p)
+static int renderer_init_textures(renderer_t *R_p)
 {
 	int tex_size;
 	tex_size = sizeof(unsigned int) * MAX_TEX;
 	R_p->texs = malloc(tex_size);
 	memset(R_p->texs, 0, tex_size);
 	R_p->tex_count = 0;
-	stbi_set_flip_vertically_on_load(1);
 	return TRUE;
 }
 
 
-int renderer_init(renderer_t *R_p)
+int renderer_init(renderer_t *R_p, int width, int height)
 {
+	R_p->width = width;
+	R_p->height = height;
 	if (!init_shader(&(R_p->shader_id)))
 		return FALSE;
 	renderer_init_vertices(R_p);
@@ -77,14 +77,14 @@ int renderer_init(renderer_t *R_p)
 	return TRUE;
 }
 
-int renderer_draw_call(renderer_t *R_p)
+static int renderer_draw_call(renderer_t *R_p)
 {
 	glBindVertexArray(R_p->vao);
 	glDrawArrays(GL_TRIANGLES, 0, QUAD_VERT * R_p->vert_d.quad_count);
 	return TRUE;
 }
 
-int renderer_set_samplers(renderer_t *R_p)
+static int renderer_set_samplers(renderer_t *R_p)
 {
 	unsigned int texs_loc;
 	int samplers[32];
@@ -97,7 +97,7 @@ int renderer_set_samplers(renderer_t *R_p)
 	return TRUE;
 }
 
-int renderer_submit_mvp(renderer_t *R_p)
+static int renderer_submit_mvp(renderer_t *R_p)
 {
 	set_uniform_mat4(R_p->shader_id, "view", R_p->mvp_d.view);
 	set_uniform_mat4(R_p->shader_id, "proj", R_p->mvp_d.proj);
@@ -115,7 +115,7 @@ int renderer_push_model(renderer_t *R_p, mat4 model)
 	return TRUE;
 }
 
-int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
+static int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
 {
 	int curr_vert;
 	curr_vert = QUAD_VERT * R_p->vert_d.quad_count;
@@ -126,7 +126,7 @@ int renderer_push_quad2vert(renderer_t *R_p, vertex_t *quad)
 	return TRUE;
 }
 
-int renderer_submit_textures(renderer_t *R_p)
+static int renderer_submit_textures(renderer_t *R_p)
 {
 	int i;
 	for (i = 0; i < R_p->tex_count; i++)
@@ -203,7 +203,7 @@ int renderer_draw_quad(renderer_t *R_p, unsigned int tex_id, unsigned int model_
 	return renderer_push_quad2vert(R_p, res);
 }
 
-int renderer_submit_vert(renderer_t *R_p)
+static int renderer_submit_vert(renderer_t *R_p)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, R_p->vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, R_p->vert_d.vert_size, R_p->vert_d.vert);
